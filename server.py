@@ -5,11 +5,12 @@ import math
 import time
 
 def lidar_com_cliente(conexao, endereco):
-	print(f"Conectado com: {addr[0]}")
+	print(f"Conectado com: {endereco[0]}")
 	while True:                # forever
-		data = conn.recv(1024)   # receive data from client
+		data = conexao.recv(1024)   # receive data from client
 		if not data: break       # stop if client stopped
 		comando = data.decode().strip()
+		print(comando)
 		time.sleep(2)
 		if comando.startswith("RAIZ"):
 			resposta = calcular_raiz(comando)
@@ -20,13 +21,14 @@ def lidar_com_cliente(conexao, endereco):
 		else:
 			resposta = "Comando não reconhecido. Use RAIZ ou INVERTE."
 		#print(bytes.decode(data))
-	conn.send(f"{resposta}\n".encode())
-#conn.send(str.encode(bytes.decode(data)+"*")) # return sent data plus an "*"
-	conn.close()               # close the connect
+		conexao.send(f"{resposta}\n".encode())
+		#conn.send(str.encode(bytes.decode(data)+"*")) # return sent data plus an "*"
+	conexao.close()               # close the connect
     
 def iniciar_servidor():
     servidor = socket(AF_INET, SOCK_STREAM)
-    servidor.bind(('0.0.0.0', port)) # Ouve em todas as interfaces na porta 5050
+    servidor.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # Reutiliza a porta caso ela esteja em estado TIME_WAIT
+    servidor.bind(('0.0.0.0', PORT)) # Ouve em todas as interfaces na porta 5050
     servidor.listen()
     print("[ESCUTANDO] Servidor aguardando conexões...")
 
@@ -36,7 +38,8 @@ def iniciar_servidor():
         # Cria uma thread dedicada para o novo cliente
         thread = threading.Thread(target=lidar_com_cliente, args=(conn, addr))
         thread.start()
-        print(f"[CONEXÕES ATIVAS] {threading.active_count() - 1}")    
+        print(f"[CONEXÕES ATIVAS] {threading.active_count() - 1}")  
+        
 
 def somar_valores(dados):
     partes = dados.split()
